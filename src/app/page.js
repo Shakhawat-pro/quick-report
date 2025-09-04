@@ -7,8 +7,8 @@ import Print from "../components/Print";
 import Formate from "@/components/Formate";
 
 
-const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "1KOr9dTMKcvwjp2M3I5rFfs2G0I279Euqdsa8PoJ1Llw";
-const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "1218107331";
+const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "";
+const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "";
 
 // Return multiple candidate URLs we will try in order.
 function buildCandidateUrls(sheetId, sheetGid) {
@@ -161,9 +161,9 @@ export default function Home() {
 
   // Derive day range based on period
   const periodInfo = useMemo(() => {
-    if (period === 'first') return { start: 1, end: 15, label: '1 – 15 '+currentMonthName(rows) };
-    if (period === 'second') return { start: 16, end: 31, label: '16 – 31 '+currentMonthName(rows) };
-    return { start: 1, end: 31, label: 'Full Month '+currentMonthName(rows) };
+    if (period === 'first') return { start: 1, end: 15, label: `1 ${currentMonthName(rows)} - 15 ${currentMonthName(rows)}` };
+    if (period === 'second') return { start: 16, end: 31, label: `16 ${currentMonthName(rows)} - 31 ${currentMonthName(rows)}` };
+    return { start: 1, end: 31, label: currentMonthName(rows) };
   }, [period, rows]);
 
   // Filter logs for selected employee according to period

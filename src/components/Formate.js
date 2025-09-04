@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 
 // Inline (raw) CSS style objects to replace Tailwind utility classes
 const styles = {
@@ -39,8 +39,8 @@ const styles = {
     rowAuto: {
         border: '1px solid #000',
         display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'stretch'
+        justifyContent: 'space-between',
+        alignItems: 'stretch'
     },
     cell: {
         flex: 1,
@@ -63,8 +63,8 @@ const styles = {
         flex: 1,
         padding: '4px 8px',
         fontWeight: 600,
-    borderLeft: '1px solid #000',
-    display: 'flex'
+        borderLeft: '1px solid #000',
+        display: 'flex'
     },
     textarea: {
         width: '100%',
@@ -74,10 +74,10 @@ const styles = {
         fontSize: '13px',
         lineHeight: 1.3,
         padding: '4px 6px',
-    border: '0', // remove inner border to avoid double border effect
-    outline: 'none',
-    background: 'transparent',
-    boxSizing: 'border-box'
+        border: '0', // remove inner border to avoid double border effect
+        outline: 'none',
+        background: 'transparent',
+        boxSizing: 'border-box'
     },
     footerText: {
         textAlign: 'center',
@@ -90,8 +90,55 @@ const styles = {
     }
 };
 
+// Auto-resizing text input based on content width
+function AutoWidthInput({ value, onChange, placeholder, style }) {
+    const spanRef = useRef(null);
+    const [w, setW] = useState(60); // px
+    useLayoutEffect(() => {
+        if (spanRef.current) {
+            const width = spanRef.current.getBoundingClientRect().width;
+            // Add small padding buffer
+            setW(Math.max(40, Math.min(width + 12, 260)));
+        }
+    }, [value, placeholder]);
+    return (
+        <span style={{ position: 'relative', display: 'inline-block' }}>
+            <span
+                ref={spanRef}
+                style={{
+                    position: 'absolute',
+                    visibility: 'hidden',
+                    whiteSpace: 'pre',
+                    font: 'inherit',
+                    padding: '0 6px',
+                    fontWeight: 400
+                }}
+            >{value || placeholder}</span>
+            <input
+                type="text"
+                value={value}
+                placeholder={placeholder}
+                onChange={e => onChange(e.target.value)}
+                style={{
+                    font: 'inherit',
+                    fontWeight: 400,
+                    height: '24px',
+                    padding: '0 6px',
+                    border: '0',
+                    outline: 'none',
+                    background: 'transparent',
+                    width: w,
+                    boxSizing: 'content-box',
+                    ...style
+                }}
+            />
+        </span>
+    );
+}
+
 const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLabel }) => {
     const [manual, setManual] = useState({
+        range: rangeLabel || "N/A",
         leaveReason: "N/A",
         workFromHome: "N/A",
         activity: "N/A",
@@ -100,6 +147,11 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
         comment: reason || "N/A",
     });
 
+    // Keep range in sync with external rangeLabel changes
+    useEffect(() => {
+        setManual(prev => ({ ...prev, range: rangeLabel || 'N/A' }));
+    }, [rangeLabel]);
+
     const handleChange = (key, value) => {
         setManual(prev => ({ ...prev, [key]: value }));
     };
@@ -107,8 +159,17 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
     return (
         <div ref={reportRef} style={styles.container}>
             <h2 style={styles.heading}>Performance tracking report (Bi-weekly)</h2>
-            <p style={styles.subHeading}>(Report from HR department) {rangeLabel ? `(${rangeLabel})` : ''}</p>
-
+            <p style={styles.subHeading}>
+                (Report from HR department)
+                <span style={{ marginLeft: 5 }}>(
+                    <AutoWidthInput
+                        value={manual.range}
+                        onChange={(val) => handleChange('range', val)}
+                        placeholder="Manual write"
+                        style={{ marginLeft: '12px' }}
+                    />
+                )</span>
+            </p>
             <div style={styles.sectionWrapper}>
                 <div style={styles.columnStack}>
                     {/* Employee Name */}
