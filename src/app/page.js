@@ -7,8 +7,8 @@ import Print from "../components/Print";
 import Formate from "@/components/Formate";
 
 
-const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "1KOr9dTMKcvwjp2M3I5rFfs2G0I279Euqdsa8PoJ1Llw";
-const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "1218107331";
+const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "";
+const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "";
 
 // Return multiple candidate URLs we will try in order.
 function buildCandidateUrls(sheetId, sheetGid) {
@@ -180,20 +180,22 @@ export default function Home() {
 
 
   const attendanceStats = useMemo(() => {
-    if (!selectedEmployee) return { totalPresent: 0, totalAbsent: 0, totalLate: 0, casual: 0, sickLeave: 0, earlyLeave: 0, withOutReason: 0 };
-    let present = 0, absent = 0, late = 0, casual = 0, sickLeave = 0, earlyLeave = 0, withOutReason = 0;
+    if (!selectedEmployee) return { totalWorkdays: 0, totalPresent: 0, totalAbsent: 0, totalLate: 0, casual: 0, sickLeave: 0, earlyLeave: 0, withOutReason: 0, withReason: 0 };
+    let totalWorkdays = 0, present = 0, absent = 0, late = 0, casual = 0, sickLeave = 0, earlyLeave = 0, withOutReason = 0, withReason = 0;
     periodLogs.forEach(l => {
       const s = (l.status || '').toUpperCase();
       if (!s || s === 'W.H') return; // ignore weekends/holidays
-      if (['P', 'CL', 'SL'].includes(s)) present++; // T.P style
+      if (['P', 'A', 'L', 'CL', 'SL', 'EL'].includes(s)) totalWorkdays++; // count only actual workdays
+      if (['P', 'EL', 'L'].includes(s)) present++; // T.P style
       if (['A', 'CL', 'SL'].includes(s)) absent++; // TA counts actual absences
-      if (s === 'L') late++;
-      if (s === 'A') withOutReason++;
-      if (s === 'CL') casual++;
-      if (s === 'SL') sickLeave++;
-      if (s === 'EL') earlyLeave++;
+      if (['CL', 'SL'].includes(s)) withReason++; // leaves with reason
+      if (s === 'L') late++; // total late
+      if (s === 'EL') earlyLeave++; // early leave
+      if (s === 'A') withOutReason++; // absent without reason
+      if (s === 'CL') casual++; // casual leave
+      if (s === 'SL') sickLeave++; // sick leave
     });
-    return { totalPresent: present, totalAbsent: absent, totalLate: late, casual, sickLeave, earlyLeave, withOutReason };
+    return { totalWorkdays, totalPresent: present, totalAbsent: absent, totalLate: late, casual, sickLeave, earlyLeave, withOutReason, withReason };
   }, [selectedEmployee, periodLogs]);
 
 
@@ -246,12 +248,15 @@ export default function Home() {
                     <p>{new Date().toLocaleDateString()}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-5 gap-2 text-center">
-                  <Stat label="T.P" value={attendanceStats.totalPresent} color="text-emerald-600" />
-                  <Stat label="TA" value={attendanceStats.totalAbsent} color="text-rose-600" />
-                  <Stat label="TL" value={attendanceStats.totalLate} color="text-orange-600" />
-                  <Stat label="CL" value={attendanceStats.casual} color="text-indigo-600" />
-                  <Stat label="SL" value={attendanceStats.sickLeave} color="text-amber-600" />
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  {/* <Stat label="T.W (Total Workdays)" value={attendanceStats.totalWorkdays} color="text-emerald-600" /> */}
+                  <Stat label="T.P (Present)" value={attendanceStats.totalPresent} color="text-emerald-600" />
+                  <Stat label="T.L (Late)" value={attendanceStats.totalLate} color="text-orange-600" />
+                  <Stat label="E.L (Early Leave)" value={attendanceStats.earlyLeave} color="text-amber-600" />
+                  <Stat label="T.A (Absent)" value={attendanceStats.totalAbsent} color="text-rose-600" />
+                  <Stat label="C.L (Casual Leave)" value={attendanceStats.casual} color="text-indigo-600" />
+                  <Stat label="S.L (Sick Leave)" value={attendanceStats.sickLeave} color="text-amber-600" />
+
                 </div>
                 {/* Performance Tracking Template */}
                 <div className="pt-4 border-t">
@@ -263,7 +268,7 @@ export default function Home() {
                         <button onClick={()=>setPeriod('first')} className={`px-2 py-2 border-l cursor-pointer  ${period==='first'?'bg-indigo-600 text-white hover:bg-indigo-700':'bg-white text-slate-600 hover:bg-slate-100'}`}>1st</button>
                         <button onClick={()=>setPeriod('second')} className={`px-2 py-2 border-l cursor-pointer  ${period==='second'?'bg-indigo-600 text-white hover:bg-indigo-700':'bg-white text-slate-600 hover:bg-slate-100'}`}>2nd</button>
                       </div>
-                      <Print targetRef={reportRef} />
+                      {/* <Print targetRef={reportRef} /> */}
                       <DownloadPDF targetRef={reportRef} fileName={`report-${selectedEmployee.name}-${period}`} />
                     </div>
                   </div>
@@ -290,11 +295,11 @@ export default function Home() {
                     </table>
                   </div>
                 </div>
-                <div className="space-y-1">
+                {/* <div className="space-y-1">
                   <label className="text-sm font-medium text-slate-600">Notes</label>
                   <textarea value={reason} onChange={e => setReason(e.target.value)} placeholder="Write a note..." className="w-full border rounded-md p-2 text-sm min-h-24 resize-y focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                   {reason && <p className="text-[10px] text-slate-500 italic">Note saved locally (no export).</p>}
-                </div>
+                </div> */}
                 {/* Download PDF button removed */}
               </div>
             ) : <div className="text-sm text-slate-500 border rounded-md p-6 bg-white">Select an employee to view details.</div>}

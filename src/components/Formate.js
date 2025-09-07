@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import PdfRendererButton from "./PdfRendererButton";
 
 // Inline (raw) CSS style objects to replace Tailwind utility classes
 const styles = {
@@ -197,82 +198,48 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
         });
     };
 
+
     return (
         <>
-            {/* Non-print controls (presets) */}
-            <div className="flex flex-wrap gap-3 mb-3 text-[12px] itemce">
-                <div className="min-w-[160px]">
-                    <label className="block font-semibold mb-0.5">Leave Reason</label>
-                    <select
-                        value={manual.leaveReason}
-                        onChange={(e) => handleChange('leaveReason', e.target.value)}
-                        className="w-full border border-gray-400 rounded-sm bg-white/70 px-2 py-1 text-xs focus:outline-none"
-                    >
-                        <option value="">Select…</option>
-                        {presetOptions.leaveReason.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
+            <div className="mb-4 border-b-1 border-gray-200  p-3 ">
+                <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-[11px] font-semibold tracking-wide text-slate-600 uppercase">Report Fields</h4>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (!selectedEmployee?.eId) return;
+                                const initial = createInitialManual();
+                                perEmployeeRef.current[selectedEmployee.eId] = initial;
+                                setManual(initial);
+                            }}
+                            disabled={!selectedEmployee?.eId}
+                            className="px-3 py-2 text-xs rounded-md bg-red-600 hover:bg-red-500 text-white font-medium shadow disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        >Reset</button>
+                        <PdfRendererButton manual={manual} selectedEmployee={selectedEmployee} attendanceStats={attendanceStats} />
+                    </div>
                 </div>
-
-                <div className="min-w-[160px]">
-                    <label className="block font-semibold mb-0.5">Activity</label>
-                    <select
-                        value={manual.activity}
-                        onChange={(e) => handleChange('activity', e.target.value)}
-                        className="w-full border border-gray-400 rounded-sm bg-white/70 px-2 py-1 text-xs focus:outline-none"
-                    >
-                        <option value="">Select…</option>
-                        {presetOptions.activity.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                </div>
-
-                <div className="min-w-[180px]">
-                    <label className="block font-semibold mb-0.5">Recommendation</label>
-                    <select
-                        value={manual.recommendation}
-                        onChange={(e) => handleChange('recommendation', e.target.value)}
-                        className="w-full border border-gray-400 rounded-sm bg-white/70 px-2 py-1 text-xs focus:outline-none"
-                    >
-                        <option value="">Select…</option>
-                        {presetOptions.recommendation.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                </div>
-
-                <div className="min-w-[140px]">
-                    <label className="block font-semibold mb-0.5">Behavior</label>
-                    <select
-                        value={manual.behavior}
-                        onChange={(e) => handleChange('behavior', e.target.value)}
-                        className="w-full border border-gray-400 rounded-sm bg-white/70 px-2 py-1 text-xs focus:outline-none"
-                    >
-                        <option value="">Select…</option>
-                        {presetOptions.behavior.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                </div>
-
-                <div className="min-w-[180px]">
-                    <label className="block font-semibold mb-0.5">Comment</label>
-                    <select
-                        value={manual.comment}
-                        onChange={(e) => handleChange('comment', e.target.value)}
-                        className="w-full border border-gray-400 rounded-sm bg-white/70 px-2 py-1 text-xs focus:outline-none"
-                    >
-                        <option value="">Select…</option>
-                        {presetOptions.comment.map(o => <option key={o} value={o}>{o}</option>)}
-                    </select>
-                </div>
-                {/* Reset current employee manual values */}
-                <div className="flex flex-col justify-end ">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (!selectedEmployee?.eId) return;
-                            const initial = createInitialManual();
-                            perEmployeeRef.current[selectedEmployee.eId] = initial;
-                            setManual(initial);
-                        }}
-                        disabled={!selectedEmployee?.eId}
-                        className="px-3 py-3 text-xs rounded-md bg-red-600 hover:bg-red-500 text-white font-medium shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >Reset</button>
+                <div className="flex flex-wrap gap-4 text-[12px]">
+                    {[
+                        { key: 'leaveReason', label: 'Leave Reason', opts: presetOptions.leaveReason, w: 'min-w-[160px]' },
+                        { key: 'activity', label: 'Activity', opts: presetOptions.activity, w: 'min-w-[160px]' },
+                        { key: 'recommendation', label: 'Recommendation', opts: presetOptions.recommendation, w: 'min-w-[180px]' },
+                        { key: 'behavior', label: 'Behavior', opts: presetOptions.behavior, w: 'min-w-[140px]' },
+                        { key: 'comment', label: 'Comment', opts: presetOptions.comment, w: 'min-w-[180px]' }
+                    ].map(f => (
+                        <div key={f.key} className={f.w}>
+                            <label htmlFor={`sel-${f.key}`} className="block font-semibold mb-0.5">{f.label}</label>
+                            <select
+                                id={`sel-${f.key}`}
+                                value={manual[f.key]}
+                                onChange={e => handleChange(f.key, e.target.value)}
+                                className="w-full border border-slate-300 rounded-sm bg-white px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                <option value="">Select…</option>
+                                {f.opts.map(o => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                        </div>
+                    ))}
                 </div>
             </div>
             {/* Printable content */}
@@ -285,7 +252,7 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
                             value={manual.range}
                             onChange={(val) => handleChange('range', val)}
                             placeholder="Manual write"
-                            style={{ marginLeft: '12px' }}
+                            style={{ marginLeft: '20px' }}
                         />
                         )</span>
                 </p>
@@ -317,7 +284,7 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
 
                         {/* Leaves with reason / textarea */}
                         <div style={styles.rowAuto}>
-                            <div style={styles.cell}>Leaves (with reason) - {attendanceStats.casual + attendanceStats.sickLeave}</div>
+                            <div style={styles.cell}>Leaves (with reason) - {attendanceStats.withReason}</div>
                             <div style={styles.textAreaCell}>
                                 <textarea
                                     value={manual.leaveReason}

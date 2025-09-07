@@ -56,7 +56,7 @@ export default function DownloadPDF({ targetRef, className = "", title = "Report
 
 	return (
 		<button onClick={handlePrintToPdf} className={`px-3 py-2 text-xs rounded-md bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow cursor-pointer ${className}`}>
-			Save / Print PDF
+			Print PDF
 		</button>
 	);
 }
