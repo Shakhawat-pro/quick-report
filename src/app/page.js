@@ -7,8 +7,8 @@ import Print from "../components/Print";
 import Formate from "@/components/Formate";
 
 
-const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "";
-const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "";
+const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "1KOr9dTMKcvwjp2M3I5rFfs2G0I279Euqdsa8PoJ1Llw";
+const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "1218107331";
 
 // Return multiple candidate URLs we will try in order.
 function buildCandidateUrls(sheetId, sheetGid) {
