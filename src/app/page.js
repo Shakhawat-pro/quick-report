@@ -7,8 +7,11 @@ import Print from "../components/Print";
 import Formate from "@/components/Formate";
 
 
-const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "";
-const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "";
+const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "1KOr9dTMKcvwjp2M3I5rFfs2G0I279Euqdsa8PoJ1Llw";
+const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "1218107331";
+
+// const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "";
+// const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "";
 
 // Return multiple candidate URLs we will try in order.
 function buildCandidateUrls(sheetId, sheetGid) {
@@ -161,9 +164,21 @@ export default function Home() {
 
   // Derive day range based on period
   const periodInfo = useMemo(() => {
-    if (period === 'first') return { start: 1, end: 15, label: `1 ${currentMonthName(rows)} - 15 ${currentMonthName(rows)}` };
-    if (period === 'second') return { start: 16, end: 31, label: `16 ${currentMonthName(rows)} - 31 ${currentMonthName(rows)}` };
-    return { start: 1, end: 31, label: currentMonthName(rows) };
+    const monthName = currentMonthName(rows) || new Date().toLocaleString('default', { month: 'long' });
+    const months = [
+      'January','February','March','April','May','June','July','August','September','October','November','December'
+    ];
+    const monthIndex = months.indexOf(monthName);
+    const year = new Date().getFullYear();
+    const lastDay = monthIndex === -1 ? 31 : new Date(year, monthIndex + 1, 0).getDate(); // handles leap year automatically
+    if (period === 'first') {
+      return { start: 1, end: 15, label: `1 ${monthName} - 15 ${monthName}` };
+    }
+    if (period === 'second') {
+      return { start: 16, end: lastDay, label: `16 ${monthName} - ${lastDay} ${monthName}` };
+    }
+    // full
+    return { start: 1, end: lastDay, label: `1 ${monthName} - ${lastDay} ${monthName}` };
   }, [period, rows]);
 
   // Filter logs for selected employee according to period
@@ -272,7 +287,7 @@ export default function Home() {
                       <DownloadPDF targetRef={reportRef} fileName={`report-${selectedEmployee.name}-${period}`} />
                     </div>
                   </div>
-                  <Formate reportRef={reportRef} selectedEmployee={selectedEmployee} attendanceStats={attendanceStats} reason={reason} rangeLabel={periodInfo.label} />
+                  <Formate reportRef={reportRef} selectedEmployee={selectedEmployee} attendanceStats={attendanceStats} reason={reason} rangeLabel={periodInfo.label} period={period} />
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium text-slate-600">Daily Logs</h3>

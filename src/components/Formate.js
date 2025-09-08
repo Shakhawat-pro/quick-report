@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
 import PdfRendererButton from "./PdfRendererButton";
 
 // Inline (raw) CSS style objects to replace Tailwind utility classes
@@ -97,7 +97,8 @@ const presetOptions = {
     activity: ['Consistent Output', 'Improving Performance', 'Needs Attention'],
     recommendation: ['Continue Current Plan', 'Provide Training', 'Consider Promotion'],
     behavior: ['Excellent', 'Good', 'Needs Improvement'],
-    comment: ['Keep up the good work', 'Monitor next period', 'Follow up required']
+    comment: ['Keep up the good work', 'Monitor next period', 'Follow up required'],
+    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 };
 
 // (Tailwind will be used for the non-print controls block only)
@@ -113,6 +114,8 @@ function AutoWidthInput({ value, onChange, placeholder, style }) {
             setW(Math.max(40, Math.min(width + 12, 260)));
         }
     }, [value, placeholder]);
+
+
     return (
         <span style={{ position: 'relative', display: 'inline-block' }}>
             <span
@@ -148,12 +151,13 @@ function AutoWidthInput({ value, onChange, placeholder, style }) {
     );
 }
 
-const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLabel }) => {
+const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLabel, period }) => {
     // Store per-employee manual states so switching employees preserves their values
     const perEmployeeRef = useRef({}); // { eId: manualState }
 
     const createInitialManual = () => ({
         range: rangeLabel || "N/A",
+        month: "",
         leaveReason: "N/A",
         workFromHome: "N/A",
         activity: "N/A",
@@ -163,6 +167,31 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
     });
 
     const [manual, setManual] = useState(createInitialManual);
+
+    // Compute dynamic period label when a month is chosen.
+    const computedMonthRange = useMemo(() => {
+        if (!manual.month) return null;
+        const monthIndex = presetOptions.months.indexOf(manual.month); // 0-based
+        if (monthIndex === -1) return null;
+        const year = new Date().getFullYear();
+        const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+        if (period === 'first') return `1 ${manual.month} - 15 ${manual.month}`;
+        if (period === 'second') return `16 ${manual.month} - ${lastDay} ${manual.month}`;
+        return `1 ${manual.month} - ${lastDay} ${manual.month}`;
+    }, [manual.month, period]);
+
+    // When a month (and optionally period) is selected, auto-populate the editable range
+    // so the user can tweak it manually afterward.
+    useEffect(() => {
+        if (!selectedEmployee?.eId) return;
+        if (manual.month && computedMonthRange && manual.range !== computedMonthRange) {
+            setManual(prev => {
+                const next = { ...prev, range: computedMonthRange };
+                perEmployeeRef.current[selectedEmployee.eId] = next;
+                return next;
+            });
+        }
+    }, [manual.month, computedMonthRange, selectedEmployee?.eId]);
 
     // On employee change: load existing manual state or create & cache a new one
     useEffect(() => {
@@ -225,7 +254,8 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
                         { key: 'activity', label: 'Activity', opts: presetOptions.activity, w: 'min-w-[160px]' },
                         { key: 'recommendation', label: 'Recommendation', opts: presetOptions.recommendation, w: 'min-w-[180px]' },
                         { key: 'behavior', label: 'Behavior', opts: presetOptions.behavior, w: 'min-w-[140px]' },
-                        { key: 'comment', label: 'Comment', opts: presetOptions.comment, w: 'min-w-[180px]' }
+                        { key: 'comment', label: 'Comment', opts: presetOptions.comment, w: 'min-w-[180px]' },
+                        { key: 'month', label: 'Month', opts: presetOptions.months, w: 'min-w-[140px]' }
                     ].map(f => (
                         <div key={f.key} className={f.w}>
                             <label htmlFor={`sel-${f.key}`} className="block font-semibold mb-0.5">{f.label}</label>
@@ -248,12 +278,22 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
                 <p style={styles.subHeading}>
                     (Report from HR department)
                     <span style={{ marginLeft: 5 }}>(
-                        <AutoWidthInput
-                            value={manual.range}
-                            onChange={(val) => handleChange('range', val)}
-                            placeholder="Manual write"
-                            style={{ marginLeft: '20px' }}
-                        />
+                        {!manual.month && (
+                            <AutoWidthInput
+                                value={manual.range}
+                                onChange={(val) => handleChange('range', val)}
+                                placeholder="Manual write"
+                                style={{ marginLeft: '20px' }}
+                            />
+                        )}
+                        {manual.month && (
+                            <AutoWidthInput
+                                value={manual.range}
+                                onChange={(val) => handleChange('range', val)}
+                                placeholder="Range"
+                                style={{ marginLeft: '20px', fontWeight: 600, fontSize: '14px' }}
+                            />
+                        )}
                         )</span>
                 </p>
                 <div style={styles.sectionWrapper}>
