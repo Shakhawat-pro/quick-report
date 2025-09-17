@@ -97,9 +97,49 @@ const presetOptions = {
     activity: ['Consistent Output', 'Improving Performance', 'Needs Attention'],
     recommendation: ['Continue Current Plan', 'Provide Training', 'Consider Promotion'],
     behavior: ['Excellent', 'Good', 'Needs Improvement'],
-    comment: ['Keep up the good work', 'Monitor next period', 'Follow up required'],
-    months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    comment: [
+        // ✅ Positive / Satisfactory
+        'Attendance is regular and satisfactory.',
+        'No late arrivals recorded this period.',
+        'Good improvement in punctuality.',
+        'Consistently maintained full attendance.',
+        'No uninformed absences reported.',
+        'Leave taken as per prior approval.',
+        'Attendance trend is stable.',
+        'Positive change compared to last period.',
+        'Maintained office timing properly.',
+        'Excellent attendance record this cycle.',
+
+        // ⚠️ Needs Improvement
+        'Frequent late arrivals, needs improvement.',
+        'Absent without notice on one occasion.',
+        'Needs to be more regular in attendance.',
+        'Punctuality is below expectations.',
+        'Attendance is not consistent this period.',
+        'Requires better time management.',
+        'Multiple uninformed absences recorded.',
+        'Needs to improve presence in the office.',
+        'Late reporting is affecting overall performance.',
+        'Should reduce casual late arrivals.',
+
+        // 🔄 Mixed / Neutral
+        'Attendance is better than previous report, but still room for improvement.',
+        'Slight improvement noticed in punctuality.',
+        'Regular attendance with a few exceptions.',
+        'Late arrivals reduced compared to earlier.',
+        'Absent days slightly higher this period.',
+        'Maintains attendance but needs more consistency.',
+        'Leave management is fine, punctuality needs attention.',
+        'Attendance overall acceptable with minor issues.',
+        'Good attendance but late coming is frequent.',
+        'Noticeable improvement, keep it up.'
+    ],
+    months: [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ]
 };
+
 
 // (Tailwind will be used for the non-print controls block only)
 
@@ -155,16 +195,30 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
     // Store per-employee manual states so switching employees preserves their values
     const perEmployeeRef = useRef({}); // { eId: manualState }
 
-    const createInitialManual = () => ({
-        range: rangeLabel || "N/A",
-        month: "",
-        leaveReason: "N/A",
-        workFromHome: "N/A",
-        activity: "N/A",
-        recommendation: "N/A",
-        behavior: "Good",
-        comment: reason || "N/A",
-    });
+    const createInitialManual = () => {
+        const late = attendanceStats.totalLate;
+        const absent = attendanceStats.totalAbsent;
+
+        let activity;
+        if (late === 0 && absent === 0) {
+            activity = "No late arrivals or absences recorded during this period.";
+        } else {
+            const lateText = `${late} ${late === 1 ? "late arrival" : "late arrivals"}`;
+            const absentText = `${absent} ${absent === 1 ? "absence" : "absences"}`;
+            activity = `${lateText} and ${absentText} recorded during this period.`;
+        }
+
+        return {
+            range: rangeLabel || "N/A",
+            month: "",
+            leaveReason: "N/A",
+            workFromHome: "N/A",
+            activity,
+            recommendation: "N/A",
+            behavior: "Good",
+            comment: reason || "N/A",
+        };
+    };
 
     const [manual, setManual] = useState(createInitialManual);
 
