@@ -4,7 +4,7 @@ import axios from "axios";
 import { useRef } from 'react';
 import DownloadPDF from "../components/DownloadPDF";
 import Print from "../components/Print";
-import Formate from "@/components/Formate";
+import Formate from "../components/Formate";
 
 
 const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "1KOr9dTMKcvwjp2M3I5rFfs2G0I279Euqdsa8PoJ1Llw";

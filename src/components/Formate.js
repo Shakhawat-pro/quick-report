@@ -195,9 +195,7 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
     // Store per-employee manual states so switching employees preserves their values
     const perEmployeeRef = useRef({}); // { eId: manualState }
 
-    const createInitialManual = () => {
-        const late = attendanceStats.totalLate;
-        const absent = attendanceStats.totalAbsent;
+    const createInitialManual = ({ late, absent }) => {
 
         let activity;
         if (late === 0 && absent === 0) {
@@ -220,7 +218,7 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
         };
     };
 
-    const [manual, setManual] = useState(createInitialManual);
+    const [manual, setManual] = useState(createInitialManual({ late: attendanceStats?.totalLate || 0, absent: attendanceStats?.totalAbsent || 0 }));
 
     // Compute dynamic period label when a month is chosen.
     const computedMonthRange = useMemo(() => {
@@ -234,31 +232,24 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
         return `1 ${manual.month} - ${lastDay} ${manual.month}`;
     }, [manual.month, period]);
 
-    // When a month (and optionally period) is selected, auto-populate the editable range
-    // so the user can tweak it manually afterward.
+    // Reset manual fields whenever period changes
     useEffect(() => {
         if (!selectedEmployee?.eId) return;
-        if (manual.month && computedMonthRange && manual.range !== computedMonthRange) {
-            setManual(prev => {
-                const next = { ...prev, range: computedMonthRange };
-                perEmployeeRef.current[selectedEmployee.eId] = next;
-                return next;
-            });
-        }
-    }, [manual.month, computedMonthRange, selectedEmployee?.eId]);
 
-    // On employee change: load existing manual state or create & cache a new one
-    useEffect(() => {
-        if (!selectedEmployee?.eId) return;
         const id = selectedEmployee.eId;
-        if (perEmployeeRef.current[id]) {
-            setManual(perEmployeeRef.current[id]);
-        } else {
-            const initial = createInitialManual();
-            perEmployeeRef.current[id] = initial;
-            setManual(initial);
-        }
-    }, [selectedEmployee?.eId]);
+
+        // Create initial manual using current attendance stats
+        const initial = createInitialManual({
+            late: attendanceStats?.totalLate || 0,
+            absent: attendanceStats?.totalAbsent || 0
+        });
+
+        // Update cache and state
+        perEmployeeRef.current[id] = initial;
+        setManual(initial);
+
+    }, [period, selectedEmployee?.eId, attendanceStats?.totalLate, attendanceStats?.totalAbsent]);
+
 
     // Keep range in sync with external rangeLabel changes (update current employee's cached state too)
     useEffect(() => {
