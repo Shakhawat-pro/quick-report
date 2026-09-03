@@ -7,8 +7,8 @@ import Print from "../components/Print";
 import Formate from "../components/Formate";
 
 
-const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "1KOr9dTMKcvwjp2M3I5rFfs2G0I279Euqdsa8PoJ1Llw";
-const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "1218107331";
+const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "1aGcvSYUnnh910XLIUSmf_Ck_B5p_KbpmQVPzwHltRI4";
+const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "1690476804";
 
 // const DEFAULT_SHEET_ID = process.env.NEXT_PUBLIC_SHEET_ID || "";
 // const DEFAULT_SHEET_GID = process.env.NEXT_PUBLIC_SHEET_GID || "";
@@ -82,6 +82,12 @@ function parseCSV(text) {
   return results;
 }
 
+const getDefaultPeriod = () => {
+  const day = new Date().getDate();
+  return day <= 15 ? "first" : "second";
+};
+
+
 export default function Home() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -91,7 +97,7 @@ export default function Home() {
   const [reason, setReason] = useState("");
   const [sheetId, setSheetId] = useState(DEFAULT_SHEET_ID);
   const [sheetGid, setSheetGid] = useState(DEFAULT_SHEET_GID);
-  const [period, setPeriod] = useState('full'); // full | first | second
+  const [period, setPeriod] = useState(getDefaultPeriod()); // full | first | second
   const reportRef = useRef(null);
 
   useEffect(() => {
@@ -218,7 +224,7 @@ export default function Home() {
   // PDF functionality removed
 
   return (
-    <div className="min-h-screen p-6 sm:p-10 bg-gradient-to-b from-white to-slate-50 text-slate-800">
+    <div className="min-h-screen p-6 sm:p-10 bg-gradient-to-b from-white to-slate-200 text-slate-800">
       <div className="max-w-6xl mx-auto space-y-6">
         <header className="flex flex-col sm:flex-row sm:items-end gap-4 justify-between">
           <div>
@@ -227,7 +233,7 @@ export default function Home() {
           </div>
           <div className="flex gap-3 items-center">
             <input value={sheetId} onChange={e => setSheetId(e.target.value)} placeholder="Sheet ID" className="border rounded-md px-3 py-2 text-sm w-48 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 " />
-            <input value={sheetGid} onChange={e => setSheetGid(e.target.value)} placeholder="Sheet GID" className="border rounded-md px-3 py-2 text-sm w-32 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 " />
+            <input value={sheetGid} name="sheetGid" autoComplete="on" onChange={e => setSheetGid(e.target.value)} placeholder="Sheet GID" className="border rounded-md px-3 py-2 text-sm w-32 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 " />
             <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search by ID or Name" className="border rounded-md px-3 py-2 text-sm w-64 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 " />
           </div>
         </header>

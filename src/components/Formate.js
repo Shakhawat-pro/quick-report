@@ -1,217 +1,24 @@
 "use client";
-import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import PdfRendererButton from "./PdfRendererButton";
-
-// Inline (raw) CSS style objects to replace Tailwind utility classes
-const styles = {
-    container: {
-        padding: '24px', // p-6
-        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif', // font-sans
-        fontSize: '14px', // text-sm
-        lineHeight: 1.4,
-        color: '#111'
-    },
-    heading: {
-        textAlign: 'center',
-        fontSize: '20px', // text-xl
-        fontWeight: 700,
-        margin: '0 0 4px'
-    },
-    subHeading: {
-        textAlign: 'center',
-        margin: '0 0 16px',
-        fontWeight: 400
-    },
-    sectionWrapper: {
-        marginBottom: '16px'
-    },
-    columnStack: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px' // gap-5
-    },
-    row: {
-        border: '1px solid #000',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        height: '56px' // h-14
-    },
-    rowAuto: {
-        border: '1px solid #000',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'stretch'
-    },
-    cell: {
-        flex: 1,
-        padding: '4px 8px', // py-1 px-2
-        fontWeight: 600,
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center'
-    },
-    cellBorderLeft: {
-        flex: 1,
-        padding: '4px 8px',
-        fontWeight: 600,
-        borderLeft: '1px solid #000',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center'
-    },
-    textAreaCell: {
-        flex: 1,
-        padding: '4px 8px',
-        fontWeight: 600,
-        borderLeft: '1px solid #000',
-        display: 'flex'
-    },
-    textarea: {
-        width: '100%',
-        minHeight: '46px',
-        resize: 'vertical',
-        fontFamily: 'inherit',
-        fontSize: '13px',
-        lineHeight: 1.3,
-        padding: '4px 6px',
-        border: '0', // remove inner border to avoid double border effect
-        outline: 'none',
-        background: 'transparent',
-        boxSizing: 'border-box'
-    },
-    footerText: {
-        textAlign: 'center',
-        fontWeight: 600,
-        margin: 0
-    },
-    date: {
-        padding: '4px 8px',
-        fontWeight: 600
-    }
-};
-
-// Preset options for quick selection (user can still manually edit textarea)
-const presetOptions = {
-    leaveReason: ['Sick Leave', 'Casual Leave', 'Official Duty'],
-    activity: ['Consistent Output', 'Improving Performance', 'Needs Attention'],
-    recommendation: ['Continue Current Plan', 'Provide Training', 'Consider Promotion'],
-    behavior: ['Excellent', 'Good', 'Needs Improvement'],
-    comment: [
-        // ✅ Positive / Satisfactory
-        'Attendance is regular and satisfactory.',
-        'No late arrivals recorded this period.',
-        'Good improvement in punctuality.',
-        'Consistently maintained full attendance.',
-        'No uninformed absences reported.',
-        'Leave taken as per prior approval.',
-        'Attendance trend is stable.',
-        'Positive change compared to last period.',
-        'Maintained office timing properly.',
-        'Excellent attendance record this cycle.',
-
-        // ⚠️ Needs Improvement
-        'Frequent late arrivals, needs improvement.',
-        'Absent without notice on one occasion.',
-        'Needs to be more regular in attendance.',
-        'Punctuality is below expectations.',
-        'Attendance is not consistent this period.',
-        'Requires better time management.',
-        'Multiple uninformed absences recorded.',
-        'Needs to improve presence in the office.',
-        'Late reporting is affecting overall performance.',
-        'Should reduce casual late arrivals.',
-
-        // 🔄 Mixed / Neutral
-        'Attendance is better than previous report, but still room for improvement.',
-        'Slight improvement noticed in punctuality.',
-        'Regular attendance with a few exceptions.',
-        'Late arrivals reduced compared to earlier.',
-        'Absent days slightly higher this period.',
-        'Maintains attendance but needs more consistency.',
-        'Leave management is fine, punctuality needs attention.',
-        'Attendance overall acceptable with minor issues.',
-        'Good attendance but late coming is frequent.',
-        'Noticeable improvement, keep it up.'
-    ],
-    months: [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-    ]
-};
+import AutoWidthInput from "./AutoWidthInput";
+import { reportStyles as styles } from "@/styles/reportStyles";
+import { presetOptions } from "@/constants/presets";
+import { buildActivityText, computeMonthRange } from "@/utils/attendance";
 
 
-// (Tailwind will be used for the non-print controls block only)
-
-// Auto-resizing text input based on content width
-function AutoWidthInput({ value, onChange, placeholder, style }) {
-    const spanRef = useRef(null);
-    const [w, setW] = useState(60); // px
-    useLayoutEffect(() => {
-        if (spanRef.current) {
-            const width = spanRef.current.getBoundingClientRect().width;
-            // Add small padding buffer
-            setW(Math.max(40, Math.min(width + 12, 260)));
-        }
-    }, [value, placeholder]);
-
-
-    return (
-        <span style={{ position: 'relative', display: 'inline-block' }}>
-            <span
-                ref={spanRef}
-                style={{
-                    position: 'absolute',
-                    visibility: 'hidden',
-                    whiteSpace: 'pre',
-                    font: 'inherit',
-                    padding: '0 6px',
-                    fontWeight: 400
-                }}
-            >{value || placeholder}</span>
-            <input
-                type="text"
-                value={value}
-                placeholder={placeholder}
-                onChange={e => onChange(e.target.value)}
-                style={{
-                    font: 'inherit',
-                    fontWeight: 400,
-                    height: '24px',
-                    padding: '0 6px',
-                    border: '0',
-                    outline: 'none',
-                    background: 'transparent',
-                    width: w,
-                    boxSizing: 'content-box',
-                    ...style
-                }}
-            />
-        </span>
-    );
-}
 
 const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLabel, period }) => {
     // Store per-employee manual states so switching employees preserves their values
     const perEmployeeRef = useRef({}); // { eId: manualState }
 
     const createInitialManual = ({ late, absent }) => {
-
-        let activity;
-        if (late === 0 && absent === 0) {
-            activity = "No late arrivals or absences recorded during this period.";
-        } else {
-            const lateText = `${late} ${late === 1 ? "late arrival" : "late arrivals"}`;
-            const absentText = `${absent} ${absent === 1 ? "absence" : "absences"}`;
-            activity = `${lateText} and ${absentText} recorded during this period.`;
-        }
-
         return {
             range: rangeLabel || "N/A",
             month: "",
             leaveReason: "N/A",
             workFromHome: "N/A",
-            activity,
+            activity: buildActivityText({ late, absent }),
             recommendation: "N/A",
             behavior: "Good",
             comment: reason || "N/A",
@@ -221,21 +28,24 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
     const [manual, setManual] = useState(createInitialManual({ late: attendanceStats?.totalLate || 0, absent: attendanceStats?.totalAbsent || 0 }));
 
     // Compute dynamic period label when a month is chosen.
-    const computedMonthRange = useMemo(() => {
-        if (!manual.month) return null;
-        const monthIndex = presetOptions.months.indexOf(manual.month); // 0-based
-        if (monthIndex === -1) return null;
-        const year = new Date().getFullYear();
-        const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-        if (period === 'first') return `1 ${manual.month} - 15 ${manual.month}`;
-        if (period === 'second') return `16 ${manual.month} - ${lastDay} ${manual.month}`;
-        return `1 ${manual.month} - ${lastDay} ${manual.month}`;
-    }, [manual.month, period]);
+    const computedMonthRange = useMemo(() => computeMonthRange(manual.month, period), [manual.month, period]);
+
+    // When month changes, auto-populate the editable range based on selected period
+    useEffect(() => {
+        if (!selectedEmployee?.eId) return;
+        if (!manual.month) return; // only act when a month is selected
+        if (!computedMonthRange) return;
+        if (manual.range === computedMonthRange) return;
+        setManual(prev => {
+            const next = { ...prev, range: computedMonthRange };
+            perEmployeeRef.current[selectedEmployee.eId] = next;
+            return next;
+        });
+    }, [manual.month, computedMonthRange, selectedEmployee?.eId]);
 
     // Reset manual fields whenever period changes
     useEffect(() => {
         if (!selectedEmployee?.eId) return;
-
         const id = selectedEmployee.eId;
 
         // Create initial manual using current attendance stats
@@ -283,7 +93,10 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
                             type="button"
                             onClick={() => {
                                 if (!selectedEmployee?.eId) return;
-                                const initial = createInitialManual();
+                                const initial = createInitialManual({
+                                    late: attendanceStats?.totalLate || 0,
+                                    absent: attendanceStats?.totalAbsent || 0
+                                });
                                 perEmployeeRef.current[selectedEmployee.eId] = initial;
                                 setManual(initial);
                             }}
@@ -424,6 +237,12 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
                             <div style={styles.cell}>Comment -</div>
                             <div style={styles.textAreaCell}>
                                 <textarea
+                                    ref={(el) => {
+                                        if (el) {
+                                            el.style.height = "auto";           // reset height
+                                            el.style.height = el.scrollHeight + "px"; // set to scrollHeight
+                                        }
+                                    }}
                                     value={manual.comment || 'N/A'}
                                     onChange={(e) => handleChange('comment', e.target.value)}
                                     placeholder="Manual write"
@@ -431,6 +250,29 @@ const Formate = ({ reportRef, selectedEmployee, attendanceStats, reason, rangeLa
                                 />
                             </div>
                         </div>
+
+                        {/* <div style={styles.rowAuto}>
+                            <div style={styles.cell}>Comment -</div>
+                            <div style={styles.textAreaCell}>
+                                <textarea
+                                    value={manual.comment || 'N/A'}
+                                    onChange={e => handleChange('comment', e.target.value)}
+                                    placeholder="Manual write"
+                                    style={styles.textarea}
+                                    rows={1}
+                                    ref={el => {
+                                        if (el) {
+                                            el.style.height = "auto";
+                                            el.style.height = el.scrollHeight + "px";
+                                        }
+                                    }}
+                                    onInput={e => {
+                                        e.target.style.height = "auto";
+                                        e.target.style.height = e.target.scrollHeight + "px";
+                                    }}
+                                />
+                            </div>
+                        </div> */}
 
                         {/* Date */}
                         <div style={styles.date}>Submitted Date – {new Date().toLocaleDateString()}</div>

@@ -60,4 +60,16 @@
 @media print {
   .report-wrapper { background: #ffffff; box-shadow: none; }
   body { background: #ffffff; }
+  /* Hide scrollbars on textareas when printing and prevent resizing artifacts */
+  textarea,
+  .report-inline-textarea {
+    overflow: hidden !important;
+    resize: none !important;
+    -ms-overflow-style: none !important; /* IE/Edge */
+    scrollbar-width: none !important;    /* Firefox */
+  }
+  textarea::-webkit-scrollbar,
+  .report-inline-textarea::-webkit-scrollbar {
+    display: none !important;            /* Chrome/Safari */
+  }
 }
